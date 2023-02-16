@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.design.bs.user.mapper.UserMapper">
+    <resultMap id="userMap" type="com.design.bs.user.entity.User">
+    	<id column="id" property="id" javaType="Long" jdbcType="INTEGER"></id>
+    	<result column="usercode" property="usercode" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="password" property="password" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="name" property="name" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="salt" property="salt" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="create_time" property="createTime" javaType="Date" jdbcType="TIMESTAMP"></result>
+    	<result column="create_user" property="createUser" javaType="Long" jdbcType="INTEGER"></result>
+    	<result column="update_time" property="updateTime" javaType="Date" jdbcType="TIMESTAMP"></result>
+    	<result column="update_user" property="updateUser" javaType="Long" jdbcType="INTEGER"></result>
+    	<result column="avatar" property="avatar" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="phone" property="phone" javaType="Long" jdbcType="INTEGER"></result>
+    	<result column="email" property="email" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="sex" property="sex" javaType="Integer" jdbcType="INTEGER"></result>
+    	<result column="description" property="description" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="status" property="status" javaType="Integer" jdbcType="INTEGER"></result>
+    	<result column="user_type" property="userType" javaType="Integer" jdbcType="INTEGER"></result>
+    	<result column="tenantName" property="tenantName" javaType="String" jdbcType="VARCHAR"></result>
+		<collection property="roleNames" column="id"  select="com.design.bs.user.mapper.UserMapper.getUserRoleNames"></collection>
+    </resultMap>
+    
+     <resultMap id="userDetailMap" type="com.design.bs.user.entity.UserWithRole">
+    	<id column="id" property="id" javaType="Long" jdbcType="INTEGER"></id>
+    	<result column="usercode" property="usercode" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="password" property="password" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="name" property="name" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="salt" property="salt" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="create_time" property="createTime" javaType="Date" jdbcType="TIMESTAMP"></result>
+    	<result column="create_user" property="createUser" javaType="Long" jdbcType="INTEGER"></result>
+    	<result column="update_time" property="updateTime" javaType="Date" jdbcType="TIMESTAMP"></result>
+    	<result column="update_user" property="updateUser" javaType="Long" jdbcType="INTEGER"></result>
+    	<result column="avatar" property="avatar" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="phone" property="phone" javaType="Long" jdbcType="INTEGER"></result>
+    	<result column="email" property="email" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="sex" property="sex" javaType="Integer" jdbcType="INTEGER"></result>
+    	<result column="description" property="description" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="status" property="status" javaType="Integer" jdbcType="INTEGER"></result>
+    	<result column="user_type" property="userType" javaType="Integer" jdbcType="INTEGER"></result>
+    	<result column="tenantName" property="tenantName" javaType="String" jdbcType="VARCHAR"></result>
+    	<result column="roleId" property="roleId" javaType="Long" jdbcType="INTEGER"></result>
+    	<collection property="menuAndButtons" column="id"  select="com.ai.aif.foot.tenant.mapper.UserMapper.getUserMenuAndButtons"></collection>
+    </resultMap>
+    
+    <select id="getUserRoleNames" resultType="string">
+        select r.name from t_user u
+			left join t_user_role ur on u.id = ur.user_id
+			left join t_role r on ur.role_id = r.id
+			where u.id=#{id}
+    </select>
+    
+    <select id="getUserMenuAndButtons" resultType="com.design.bs.menu.entity.Menu">
+        select distinct 
+            m.*,
+            CONCAT(CONCAT_WS('(',m.name,m.code),')') nameCode
+            from t_user u
+			left join t_user_role ur on u.id= ur.user_id
+			left join t_role r on ur.role_id = r.id
+			left join t_role_menu rm on r.id = rm.role_id
+			left join t_menu m on rm.menu_id = m.id
+			where u.id=#{id} and m.id is not null
+			order by m.priority asc
+    </select>
+    
+    <select id="queryList" resultMap="userMap">
+        select u.id,u.statistic, u.usercode, u.name,u.password,u.department, u.create_time, u.avatar, u.phone, u.email, u.sex, u.status, u.description, u.user_type,
+               (select d.name from t_department d where d.id = u.department ) departmentName
+        from t_user u
+        where 1=1
+        <if test="name != null and name != ''">
+          and (u.name like CONCAT('%',#{name},'%')  or u.usercode like CONCAT('%',#{name},'%'))
+        </if>
+		<if test="department != null and department > 0 ">
+			and u.department = #{department}
+		</if>
+        <if test="usercode != null and usercode != ''">
+          and usercode = #{usercode}
+        </if>
+        <if test="sex != null and sex != ''">
+            and sex = #{sex}
+        </if>
+        <if test="status != null and status != ''">
+            and status = #{status}
+        </if>
+        and id!=1
+        order by u.create_time desc
+    </select>
+
+    <select id="findById" resultMap="userDetailMap">
+        select u.id,u.name, u.usercode, u.create_time, u.avatar, u.description, u.status, u.phone, u.email, u.sex, ur.role_id roleId
+        from t_user u
+               left join t_user_role ur on (u.id = ur.user_id)
+        where u.id = #{id}
+    </select>
+    
+    <select id="getNoTenantUsers" resultType="com.design.bs.user.entity.User">
+	      select u.id, u.usercode, u.name, u.create_time, u.avatar, u.phone, u.sex, u.status, u.description,u.user_type,
+          case 	
+				when t.role_type=1 then '1'
+				else '0'
+				end tenantAdmin
+	      from t_user u
+				left join 
+				(select ur.user_id,ur.role_id,r.role_type from t_user_role ur,t_role r where ur.role_id = r.id and r.role_type=1) t
+				on u.id = t.user_id
+	      where u.id not in(select ut.user_id from t_user_tenant ut)
+	            and u.user_type <![CDATA[ <> ]]> 1
+	      <if test="name != null and name != ''">
+	      and (u.name like CONCAT('%',#{name},'%')  or u.usercode like CONCAT('%',#{name},'%'))
+	      </if>
+	      and u.status='1'
+    </select>
+
+	<select id="achievementRank" resultType="com.design.bs.user.entity.User">
+		SELECT
+			u.`name`,
+			IFNULL(SUM(o.`transfer_accounts_amount`),0) amount
+		FROM
+			(SELECT
+				 id,
+				 `name`
+			 FROM
+				 t_user
+			 WHERE department = #{departmentId}
+			    and statistic = '是'
+			    ) u
+				LEFT JOIN
+			    (
+			        select * from t_order io
+			        	where 1=1
+						  AND DATE_FORMAT(io.deal_date,'%Y-%m-%d') <![CDATA[ >= ]]> DATE_FORMAT(#{dealDateBegin},'%Y-%m-%d')
+						  AND DATE_FORMAT(io.deal_date,'%Y-%m-%d') <![CDATA[ <= ]]> DATE_FORMAT(#{dealDateEnd},'%Y-%m-%d')
+			    ) o
+				ON u.id = o.`user_id`
+		where 1=1
+		GROUP BY u.id
+		ORDER BY amount DESC
+	</select>
+
+	<select id="achievementRankAll" resultType="com.design.bs.user.entity.User">
+		SELECT
+			u.`name`,
+			IFNULL(SUM(o.`transfer_accounts_amount`),0) amount
+		FROM
+			(SELECT id,`name` FROM t_user where statistic = '是' ) u
+				LEFT JOIN
+				(
+					select * from t_order io
+					where 1=1
+					  AND DATE_FORMAT(io.deal_date,'%Y-%m-%d') <![CDATA[ >= ]]> DATE_FORMAT(#{dealDateBegin},'%Y-%m-%d')
+					  AND DATE_FORMAT(io.deal_date,'%Y-%m-%d') <![CDATA[ <= ]]> DATE_FORMAT(#{dealDateEnd},'%Y-%m-%d')
+				) o
+				ON u.id = o.`user_id`
+		where 1=1
+		GROUP BY u.id
+		ORDER BY amount DESC
+	</select>
+</mapper>

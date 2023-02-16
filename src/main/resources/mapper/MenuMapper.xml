@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.design.bs.menu.mapper.MenuMapper">
+
+    <select id="getMenuButton" resultType="com.design.bs.menu.entity.Menu">
+        select m.*
+        from t_role r
+               left join t_user_role ur on (r.id = ur.role_id)
+               left join t_user u on (u.id = ur.user_id)
+               left join t_role_menu rm on (r.id = rm.role_id)
+               left join t_menu m on (m.id = rm.menu_id)
+        where u.usercode = #{usercode}
+    </select>
+    
+     <select id="findUserMenus" resultType="com.design.bs.menu.entity.Menu">
+        select distinct m.*
+        from t_role r
+               left join t_user_role ur on (r.id = ur.role_id)
+               left join t_user u on (u.id = ur.user_id)
+               left join t_role_menu rm on (r.id = rm.role_id)
+               left join t_menu m on (m.id = rm.menu_id)
+        where u.usercode = #{usercode} 
+              and m.type='menu'
+              and m.status=1
+              and r.status=1
+              order by m.priority asc
+    </select>
+
+    <select id="findUserButtons" resultType="com.design.bs.menu.entity.Menu">
+        select m.*
+        from t_role r
+               left join t_user_role ur on (r.id = ur.role_id)
+               left join t_user u on (u.id = ur.user_id)
+               left join t_role_menu rm on (r.id = rm.role_id)
+               left join t_menu m on (m.id = rm.menu_id)
+        where u.usercode = #{usercode}
+          and m.perms is not null
+          and m.perms != ''
+    </select>
+
+    <!--
+        select a.id from (select id from t_menu where parent_id in (1, 2)) a;
+        select id from t_menu where parent_id in (1, 2);
+        上述两种方式都能查询出来parent_id是(1,2)的记录行的id值。而第一种方式是先生成一张临时表a，再查询id值
+
+        update t_menu
+        set parent_id = 0
+        where id in (select a.id
+                     from (select id from t_menu where parent_id in (1, 2)) a);
+
+        update t_menu
+        set parent_id = 0
+        where id in (select id from t_menu where parent_id in (1, 2));
+        若执行后者发现：You can't specify target table 't_menu' for update in FROM clause，
+        百度查到是由于mysql不能对一张表查询到某些值就同时更新这张表，通过生成一张临时表来避免这个问题
+     -->
+    <update id="changeTopNode">
+        update t_menu
+        set parent_id = 0
+        where id in (select a.id
+        from (select id from t_menu where parent_id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        ) a);
+    </update>
+
+</mapper>

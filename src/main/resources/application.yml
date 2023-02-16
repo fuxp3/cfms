@@ -1,0 +1,33 @@
+# 通用配置，缩进使用2个空格
+server:
+  port: 80
+
+spring:
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      #最大支持文件大小3G 单位B  默认1MB
+      maxFileSize: 3221225472000
+      #最大支持请求大小3G 单位B  默认10MB
+      maxRequestSize: 3221225472000
+      #设置文件缓存的临界点300M,超过则先保存到临时目录 单位B  默认0
+      fileSizeThreshold: 314572800
+#mybatis配置
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  #type-aliases-package:
+  configuration:
+    # 使用jdbc的getGeneratedKeys 可以获取数据库自增主键值
+    use-generated-keys: true
+    # 使用列别名替换列名，默认true。如：select name as title from table
+    use-column-label: true
+    # 开启驼峰命名转换，如：Table(create_time) -> Entity(createTime)。不需要我们关心怎么进行字段匹配，mybatis会自动识别`大写字母与下划线`
+    map-underscore-to-camel-case: true
+    #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+#mybatis分页插件pagehelper设置
+pagehelper:
+  helperDialect: mysql
+  reasonable: true
+  support-methods-arguments: true
