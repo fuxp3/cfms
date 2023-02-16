@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>健康小卫士</title>
+<!--字体图标-->
+<link href="../javaex/pc/css/icomoon.css" rel="stylesheet" />
+<!--骨架样式-->
+<link href="../javaex/pc/css/common.css" rel="stylesheet" />
+<!--皮肤-->
+<link href="../javaex/pc/css/skin/default.css" rel="stylesheet" />
+<!--jquery，如果不使用jquery高版本的新功能的话，不建议修改版本-->
+<script src="../javaex/pc/lib/jquery-1.7.2.min.js"></script>
+<!--核心组件-->
+<script src="../javaex/pc/js/javaex.js"></script>
+<!--表单验证-->
+<script src="../javaex/pc/js/javaex-formVerify.js"></script>
+</head>
+
+<body>
+	<div class="javaex-page-wrap">
+		<div class="javaex-page-content">
+			<div class="javaex-page-body">
+				<div class="javaex-main">
+					<video src="" preload="preload" id="video" controls="controls" width="100%" height="240px" style="margin:20px 0px 0px 20px"></video>
+				</div>
+			</div>
+			
+			<div class="javaex-page-footer">
+				<!--<input type="button" onclick="save()" class="javaex-btn blue" value="保存" />-->
+				<input type="button" onclick="closeDialog()" class="javaex-btn wathet" value="关闭" />
+			</div>
+		</div>
+	</div>
+</body>
+<script>
+
+	/**
+	 * 关闭弹窗
+	 */
+	function closeDialog() {
+		parent.javaex.close();
+	}
+
+	function getQueryString(name) {
+		var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+		var r = window.location.search.substr(1).match(reg); //获取url中"?"符后的字符串并正则匹配
+		var context = "";
+		if (r != null)
+			context = decodeURI(r[2]);
+		reg = null;
+		r = null;
+		return context == null || context == "" || context == "undefined" ? "" : context;
+	}
+
+	$(function (){
+		var id = getQueryString("id");
+		if (id!=""){
+			$("#id").val(id);
+			document.getElementById("video").src = "/action/download/"+id;
+			document.getElementById("video").load();
+		}else {
+			$("#id").val("");
+		}
+	});
+
+</script>
+</html>

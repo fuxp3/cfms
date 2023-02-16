@@ -1,0 +1,261 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>动作库</title>
+<!--字体图标-->
+<link href="../javaex/pc/css/icomoon.css" rel="stylesheet" />
+<!--骨架样式-->
+<link href="../javaex/pc/css/common.css" rel="stylesheet" />
+<!--皮肤-->
+<link href="../javaex/pc/css/skin/default.css" rel="stylesheet" />
+<!--jquery，如果不使用jquery高版本的新功能的话，不建议修改版本-->
+<script src="../javaex/pc/lib/jquery-1.7.2.min.js"></script>
+<!--核心组件-->
+<script src="../javaex/pc/js/javaex.js"></script>
+<!--表单验证-->
+<script src="../javaex/pc/js/javaex-formVerify.js"></script>
+
+<style>
+.content {
+    padding: 10px 20px 0 20px;
+}
+</style>
+</head>
+
+<body>
+	<div class="javaex-page-wrap">
+		<div class="javaex-page-content">
+			<div class="javaex-page-body">
+				<div class="content">
+					<div class="javaex-list-toolbar clear">
+						<span class="fl"><button class="javaex-btn primary" onclick="edit()">添加</button></span>
+						<span class="fr javaex-search-group">
+							<input type="text" class="javaex-text" id="keyword" placeholder="请输入搜索内容" />
+							<button class="javaex-btn primary" onclick="search()">搜索</button>
+						</span>
+					</div>
+
+					<div class="javaex-block">
+						<table id="table" class="javaex-table td-c-1">
+							<thead>
+								<tr>
+									<th class="javaex-table-num-col"></th>
+									<!--<th class="javaex-table-filter-col"><input type="checkbox" fill listen="listen-1" /> </th>-->
+									<th>分类</th>
+									<th>文件名</th>
+									<th style="width:120px;">操作</th>
+								</tr>
+							</thead>
+							<tbody id = "tbody">
+								<tr>
+									<td>1</td>
+									<!--<td><input type="checkbox" fill listen="listen-1-2" /> </td>-->
+									<td>瑜伽</td>
+									<td>test.mp4</td>
+									<td>
+										<a href="javascript:;" onclick="edit('7','你好')" class="javaex-link primary">播放</a>
+										<a href="javascript:;" onclick="del(this, '7')" class="javaex-link danger ml-10">删除</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="javaex-page-footer">
+				<div class="javaex-page">
+					<ul id="page" class="javaex-pagination"></ul>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script>
+	function pageTotal(rowCount, pageSize) {
+		if (rowCount == null || rowCount == "") {
+			return 0;
+		} else {
+			if (pageSize != 0 &&
+					rowCount % pageSize == 0) {
+				return parseInt(rowCount / pageSize);
+			}
+			if (pageSize != 0 &&
+					rowCount % pageSize != 0) {
+				return parseInt(rowCount / pageSize) + 1;
+			}
+		}
+	}
+
+	function search() {
+		var keyword = $("#keyword").val();
+		rander(1,10,keyword);
+	}
+
+	// 渲染数据表格
+	function rander(pageNum,pageSize,keyword) {
+		// 定义全局 分页属性
+		$.ajax({
+			//请求方式
+			type : "GET",
+			//请求的媒体类型
+			contentType: "application/json;charset=UTF-8",
+			//请求地址
+			url : "/action?pageNum="+pageNum+"&pageSize="+pageSize+"&keyword="+keyword,
+			//数据，json字符串
+			//data : JSON.stringify({"pageNum":pageNum,"keyword": keyword,"pageSize": pageSize}),
+			//请求成功
+			success : function(result) {
+				console.log(result);
+				var tips = result.data.rows;
+				var text = "";
+
+				var total = result.data.total;
+				var pageSize = result.data.pageSize;
+				var pageNum = result.data.pageNum;
+				var totalPages = pageTotal(total,pageSize);
+
+				$.each(tips, function(index, value) {
+					console.log(value);
+					var num = pageSize * (pageNum - 1) + index + 1;
+					text += "<tr><td>" + num + "</td><td>" + value.type +
+							"</td><td>" + value.name + "</td>" +
+							"<td><a href='javascript:;' onclick='play("+value.id+")' class='javaex-link primary'>播放</a><a href='javascript:;' onclick='del(this, "+value.id+")' class='javaex-link danger ml-10'>删除</a></td></tr>";
+				});
+				$("#tbody").html(text);
+
+				javaex.page({
+					id : "page",    // jquery选择器，指定到ul节点
+					pageNum : pageNum,           // 默认选中第几页
+					pageSize : pageSize,         // 每页显示多少条
+					totalPages : totalPages,       // 总页数
+					isShowJumpPage : true, // 是否显示跳页
+					isShowSelect : true,   // 是否显示条数选择控件
+					totalNum : total,        // 总条数，不填时，不显示
+					position : "left",
+					isShowSelect : true,
+					callback : function(rtn) {
+						rander(rtn.pageNum,rtn.pageSize,keyword);
+					}
+				});
+			},
+			//请求失败，包含具体的错误信息
+			error : function(e){
+				console.log(e.status);
+				console.log(e.responseText);
+			}
+		});
+	}
+
+	/**
+	 * 播放
+	 */
+	function play(id){
+		var title = "在线观看";
+
+		top.javaex.dialog({
+			type : "dialog",
+			title : title,
+			url : "/actions/play.html?id="+id,	// 页面地址或网址或请求地址
+			width : "600",	// 弹出层宽度
+			height : "400",	// 弹出层高度
+			close : function() {
+				console.log("右上角点击X关闭时的回调");
+				// 如果你想阻止弹出层关闭，直接 return false; 即可
+				// return false;
+			}
+		});
+
+	}
+
+	/**
+	 * 添加/编辑
+	 */
+	function edit(id,tip) {
+		var title = "编辑";
+		if (!id) {
+			id = "";
+			title = "添加";
+		}
+
+		top.javaex.dialog({
+			type : "dialog",
+			title : title,
+			url : "/actions/edit.html?id="+id+"&tip="+tip,	// 页面地址或网址或请求地址
+			width : "600",	// 弹出层宽度
+			height : "400",	// 弹出层高度
+			close : function() {
+				console.log("右上角点击X关闭时的回调");
+				// 如果你想阻止弹出层关闭，直接 return false; 即可
+				// return false;
+			}
+		});
+	}
+
+	/**
+	 * 删除
+	 */
+	function del(obj, id) {
+		javaex.deleteDialog(obj, {
+			content : "确定要删除么？",
+			confirm : function() {
+				delCallback(id);
+			}
+		});
+	}
+	function delCallback(id) {
+		$.ajax({
+			//请求方式
+			type : "DELETE",
+			//请求的媒体类型
+			contentType: "application/json;charset=UTF-8",
+			//请求地址
+			url : "/action/"+id,
+			//数据，json字符串
+			//data : JSON.stringify(json),
+			//请求成功
+			success : function(result) {
+				console.log(result);
+				// 获取集合属性
+				var code = result.code;
+
+				if (code == 0) {
+					// 关闭弹出层
+					parent.javaex.close();
+					// 刷新页面
+					parent.parent.document.getElementById("page").contentWindow.search();
+				}else{
+					javaex.message({
+						content : result.errorInfo,
+						type : "error"
+					});
+				}
+			},
+			//请求失败，包含具体的错误信息
+			error : function(e){
+				console.log(e.status);
+				console.log(e.responseText);
+			}
+		});
+		/*javaex.tip({
+			content : "删除中，请稍候...",
+			type : "submit"
+		});*/
+
+		// ajax提交
+		// ...
+		
+		/*setTimeout(function() {
+			javaex.tip({
+				content : "操作成功",
+				type : "success"
+			});
+		}, 2000);*/
+	}
+
+	$(function (){
+		rander(1,10,"");
+	});
+</script>
+</html>

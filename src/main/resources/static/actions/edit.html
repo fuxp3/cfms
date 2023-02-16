@@ -1,0 +1,239 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>健康小卫士</title>
+<!--字体图标-->
+<link href="../javaex/pc/css/icomoon.css" rel="stylesheet" />
+<!--骨架样式-->
+<link href="../javaex/pc/css/common.css" rel="stylesheet" />
+<!--皮肤-->
+<link href="../javaex/pc/css/skin/default.css" rel="stylesheet" />
+<!--jquery，如果不使用jquery高版本的新功能的话，不建议修改版本-->
+<script src="../javaex/pc/lib/jquery-1.7.2.min.js"></script>
+<!--核心组件-->
+<script src="../javaex/pc/js/javaex.js"></script>
+<!--表单验证-->
+<script src="../javaex/pc/js/javaex-formVerify.js"></script>
+</head>
+
+<body>
+	<div class="javaex-page-wrap">
+		<div class="javaex-page-content">
+			<div class="javaex-page-body">
+				<div class="javaex-main">
+					<form id="form">
+						<input type="hidden" id="id" name="id" value=""/>
+						<input type="hidden" id="uid" name="uid" value=""/>
+						<input type="hidden" id="name" name="name" value="" />
+
+						<div class="javaex-unit clear">
+							<div class="javaex-unit-left"><p class="subtitle required">动作类型</p></div>
+							<div class="javaex-unit-right">
+								<select id="select" data-type="required">
+									<option value="">请选择</option>
+									<option value="胸肌">胸肌</option>
+									<option value="背阔肌">背阔肌</option>
+									<option value="肩部">肩部</option>
+									<option value="腹部">腹部</option>
+									<option value="手臂">手臂</option>
+									<option value="瑜伽">瑜伽</option>
+									<option value="瑜伽">拉伸</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="javaex-unit clear">
+							<div class="javaex-unit-left"><p class="subtitle required">动作视频</p></div>
+							<div class="javaex-unit-right">
+								<a href="javascript:;" class="javaex-file-container javaex-btn primary">
+									视频上传
+									<input type="file" class="javaex-file" id="upload"/>
+								</a>
+							</div>
+						</div>
+
+						<!--提示信息-->
+						<!--<div class="javaex-unit clear">
+							<div class="javaex-unit-left"><p class="subtitle">健康提示</p></div>
+							<div class="javaex-unit-right">
+								<textarea class="javaex-desc" placeholder="请填写健康小卫士提示" name="tip" id="tip" data-type="required"></textarea>
+								&lt;!&ndash;提示说明&ndash;&gt;
+								<p class="javaex-hint">请填写健康小卫士提示。提示中不得包含令人反感的信息，且长度应在1到255个字符之间。</p>
+							</div>
+						</div>-->
+
+					</form>
+				</div>
+			</div>
+			
+			<div class="javaex-page-footer">
+				<input type="button" onclick="save()" class="javaex-btn blue" value="保存" />
+				<input type="button" onclick="closeDialog()" class="javaex-btn wathet" value="关闭" />
+			</div>
+		</div>
+	</div>
+</body>
+<script>
+	javaex.select({
+		id : "select",
+		isSearch : false
+	});
+
+	/**
+	 * 本框架目前不支持数据的双向绑定，所以必须点击上传按钮后再调用该组件，不然param中自定义的参数值无法改变
+	 * #upload 是 <input type="file" />的id
+	 *
+	 * 如果不需要传递file以外的参数（或者自定义的参数值是不会变的），则可以不需要 click() 点击事件，直接在 script 标签对里调用组件
+	 * 当然，我强烈建议你把组件的调用写在点击事件里
+	 */
+	$("#upload").click(function() {
+		javaex.uploadFile({
+			url : "/action/upload",     // 请求路径
+			id : "upload",        // <input type="file" />的id
+			param : {
+				"file" : "file",    // 参数名称，左边的 "file" 是固定必须的。   右边的 "file"是参数名，Spring中与MultipartFile的参数名保持一致
+				"type" : "2",    // 除了file这个key，其他都是MultipartFile以外的参数（自定义）
+				"action" : "upload"
+			},
+			isShowTip : true,
+			chooseAfter : function (rtn) {
+				// 选择文件后的回调函数，会返回一些文件信息
+				console.log(rtn.filename);
+				console.log(rtn.filesize);
+				console.log(rtn.fileSuffix);
+
+				// 通常可以在此处调用一个定时函数，配合进度条来友好得显示excel导入数据的进度
+			},
+			callback : function (rtn) {
+				console.log(rtn);
+				$("#uid").val(rtn.data.uid);
+				$("#name").val(rtn.data.name);
+			}
+		});
+	});
+
+	/**
+	 * 保存
+	 */
+	function save() {
+		if (!javaexVerify()) {
+			return;
+		}
+		
+		// ajax提交
+		var id = $("#id").val();
+		var uid = $("#uid").val();
+		var type = $('#select option:selected').val();
+		var name = $("#name").val();
+
+		if (uid == "") {
+			javaex.message({
+				content : "请上传视频",
+				type : "error"
+			});
+			return false;
+		}
+
+		if (id==""){
+			var json = {"uid":uid,"type":type,"name":name};
+			$.ajax({
+				//请求方式
+				type : "POST",
+				//请求的媒体类型
+				contentType: "application/json;charset=UTF-8",
+				//请求地址
+				url : "/action",
+				//数据，json字符串
+				data : JSON.stringify(json),
+				//请求成功
+				success : function(result) {
+					console.log(result);
+					// 获取集合属性
+					var code = result.code;
+
+					if (code == 0) {
+						// 关闭弹出层
+						parent.javaex.close();
+						// 刷新页面
+						parent.parent.document.getElementById("page").contentWindow.search();
+					}else{
+						javaex.message({
+							content : result.errorInfo,
+							type : "error"
+						});
+					}
+				},
+				//请求失败，包含具体的错误信息
+				error : function(e){
+					console.log(e.status);
+					console.log(e.responseText);
+				}
+			});
+		}else {
+			var json = {"id":id,"tip":tip};
+			$.ajax({
+				//请求方式
+				type : "PUT",
+				//请求的媒体类型
+				contentType: "application/json;charset=UTF-8",
+				//请求地址
+				url : "/tip",
+				//数据，json字符串
+				data : JSON.stringify(json),
+				//请求成功
+				success : function(result) {
+					console.log(result);
+					// 获取集合属性
+					var code = result.code;
+
+					if (code == 0) {
+						// 关闭弹出层
+						parent.javaex.close();
+						// 刷新页面
+						parent.parent.document.getElementById("page").contentWindow.search();
+					}else{
+						javaex.message({
+							content : result.errorInfo,
+							type : "error"
+						});
+					}
+				},
+				//请求失败，包含具体的错误信息
+				error : function(e){
+					console.log(e.status);
+					console.log(e.responseText);
+				}
+			});
+		}
+
+	}
+	
+	/**
+	 * 关闭弹窗
+	 */
+	function closeDialog() {
+		parent.javaex.close();
+	}
+
+	function getQueryString(name) {
+		var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+		var r = window.location.search.substr(1).match(reg); //获取url中"?"符后的字符串并正则匹配
+		var context = "";
+		if (r != null)
+			context = decodeURI(r[2]);
+		reg = null;
+		r = null;
+		return context == null || context == "" || context == "undefined" ? "" : context;
+	}
+
+	$(function (){
+		var id = getQueryString("id");
+		if (id!=""){
+			$("#id").val(id);
+		}else {
+			$("#id").val("");
+		}
+	});
+</script>
+</html>
