@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>健康小卫士</title>
+<!--字体图标-->
+<link href="../javaex/pc/css/icomoon.css" rel="stylesheet" />
+<!--骨架样式-->
+<link href="../javaex/pc/css/common.css" rel="stylesheet" />
+<!--皮肤-->
+<link href="../javaex/pc/css/skin/default.css" rel="stylesheet" />
+<!--jquery，如果不使用jquery高版本的新功能的话，不建议修改版本-->
+<script src="../javaex/pc/lib/jquery-1.7.2.min.js"></script>
+<!--核心组件-->
+<script src="../javaex/pc/js/javaex.js"></script>
+<!--表单验证-->
+<script src="../javaex/pc/js/javaex-formVerify.js"></script>
+</head>
+
+<body>
+	<div class="javaex-page-wrap">
+		<div class="javaex-page-content">
+			<div class="javaex-page-body">
+				<div class="javaex-main">
+					<form id="form">
+						<input type="hidden" id="id" name="id" value=""/>
+
+						<!--提示信息-->
+						<div class="javaex-unit clear">
+							<div class="javaex-unit-left"><p class="subtitle">健康提示</p></div>
+							<div class="javaex-unit-right">
+								<textarea class="javaex-desc" placeholder="请填写健康小卫士提示" name="tip" id="tip" data-type="required"></textarea>
+								<!--提示说明-->
+								<p class="javaex-hint">请填写健康小卫士提示。提示中不得包含令人反感的信息，且长度应在1到255个字符之间。</p>
+							</div>
+						</div>
+
+					</form>
+				</div>
+			</div>
+			
+			<div class="javaex-page-footer">
+				<input type="button" onclick="save()" class="javaex-btn blue" value="保存" />
+				<input type="button" onclick="closeDialog()" class="javaex-btn wathet" value="关闭" />
+			</div>
+		</div>
+	</div>
+</body>
+<script>
+	/**
+	 * 保存
+	 */
+	function save() {
+		if (!javaexVerify()) {
+			return;
+		}
+		
+		// ajax提交
+		var id = $("#id").val();
+		var tip = $("#tip").val();
+		if (id==""){
+			var json = {"tip":tip};
+			$.ajax({
+				//请求方式
+				type : "POST",
+				//请求的媒体类型
+				contentType: "application/json;charset=UTF-8",
+				//请求地址
+				url : "/tip",
+				//数据，json字符串
+				data : JSON.stringify(json),
+				//请求成功
+				success : function(result) {
+					console.log(result);
+					// 获取集合属性
+					var code = result.code;
+
+					if (code == 0) {
+						// 关闭弹出层
+						parent.javaex.close();
+						// 刷新页面
+						parent.parent.document.getElementById("page").contentWindow.search();
+					}else{
+						javaex.message({
+							content : result.errorInfo,
+							type : "error"
+						});
+					}
+				},
+				//请求失败，包含具体的错误信息
+				error : function(e){
+					console.log(e.status);
+					console.log(e.responseText);
+				}
+			});
+		}else {
+			var json = {"id":id,"tip":tip};
+			$.ajax({
+				//请求方式
+				type : "PUT",
+				//请求的媒体类型
+				contentType: "application/json;charset=UTF-8",
+				//请求地址
+				url : "/tip",
+				//数据，json字符串
+				data : JSON.stringify(json),
+				//请求成功
+				success : function(result) {
+					console.log(result);
+					// 获取集合属性
+					var code = result.code;
+
+					if (code == 0) {
+						// 关闭弹出层
+						parent.javaex.close();
+						// 刷新页面
+						parent.parent.document.getElementById("page").contentWindow.search();
+					}else{
+						javaex.message({
+							content : result.errorInfo,
+							type : "error"
+						});
+					}
+				},
+				//请求失败，包含具体的错误信息
+				error : function(e){
+					console.log(e.status);
+					console.log(e.responseText);
+				}
+			});
+		}
+
+	}
+	
+	/**
+	 * 关闭弹窗
+	 */
+	function closeDialog() {
+		parent.javaex.close();
+	}
+
+	function getQueryString(name) {
+		var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+		var r = window.location.search.substr(1).match(reg); //获取url中"?"符后的字符串并正则匹配
+		var context = "";
+		if (r != null)
+			context = decodeURI(r[2]);
+		reg = null;
+		r = null;
+		return context == null || context == "" || context == "undefined" ? "" : context;
+	}
+
+	$(function (){
+		var id = getQueryString("id");
+		var tip = getQueryString("tip");
+		if (id!=""){
+			$("#id").val(id);
+			$("#tip").text(tip);
+		}else {
+			$("#id").val("");
+		}
+	});
+</script>
+</html>
