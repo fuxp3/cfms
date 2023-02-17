@@ -1,39 +1,37 @@
 package com.design.bs.user.controller;
 
-import com.design.bs.menu.service.IMenuService;
-import com.design.bs.role.entity.Role;
-import com.design.bs.role.service.IRoleService;
-import com.design.bs.user.entity.User;
-import com.design.bs.user.entity.UserMessage;
-import com.design.bs.user.entity.UserWithRole;
 import com.design.bs.core.dto.QueryPageRequest;
 import com.design.bs.core.dto.QueryPageResult;
 import com.design.bs.core.dto.Response;
-import com.design.bs.core.dto.Tree;
 import com.design.bs.core.enums.StatusCode;
+import com.design.bs.core.exception.BusinessException;
 import com.design.bs.core.utils.PageUtils;
 import com.design.bs.core.utils.PasswordHelper;
-import com.design.bs.core.utils.TreeUtils;
 import com.design.bs.core.utils.UserUtils;
-import com.design.bs.menu.entity.Menu;
+import com.design.bs.user.entity.User;
 import com.design.bs.user.mapper.UserMapper;
 import com.design.bs.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.shiro.authz.annotation.Logical;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @description: 用户服务
  **/
 @RestController
 @Slf4j
-@RequestMapping("/system/user")
 public class UserController {
 
 	@Autowired
@@ -43,139 +41,62 @@ public class UserController {
     private IUserService userService;
     
     @Autowired
-    private IRoleService roleService;
-    
-    @Autowired
-    private IMenuService menuService;
-
-    @Autowired
     private PasswordHelper passwordHelper;
 
-    @GetMapping("/info")
-    public Response<UserMessage> info() {
-    	User user = UserUtils.getCurrentUser();
-    	if(null!=user) {
-    		user = userMapper.selectByPrimaryKey(user.getId());
-    		 //获取用户角色
-            List<Role> roleList = roleService.findUserRole(user.getUsercode());
-            Set<String> roleSet = null;
-            if(null!=roleList && !roleList.isEmpty() && null!=roleList.get(0)) {
-            	roleSet = roleList.stream().map(Role::getName).collect(Collectors.toSet());
-            }
-            //获取用户权限
-            List<Menu> menuList = menuService.findUserPermissions(user.getUsercode());
-            //获取用户权限按钮名称
-            Map<String,Object> btnName = new LinkedHashMap<String,Object>();
-            Set<String> permSet = null;
-            if(null!=menuList && !menuList.isEmpty() && null!=menuList.get(0)) {
-            	permSet = menuList.stream().map(Menu::getPerms).collect(Collectors.toSet());
-            	btnName = menuList.stream().collect(Collectors.toMap(Menu::getPerms, Menu::getName, (key1, key2) -> key2));
-            }
-
-            user.setPassword("");
-            user.setSalt("");
-            return new Response<UserMessage>(StatusCode.OK, new UserMessage(UserUtils.getToken(),roleSet,permSet,btnName,user));
-    	}
-        return new Response<UserMessage>(StatusCode.SYSTEM_ERROR,new UserMessage());
+    @GetMapping("/user/info")
+    public User info() {
+    	return UserUtils.getCurrentUser();
     }
 
-    /**
-     * 有树形结构的菜单json
-     * @param
-     * @return
-     */
-    @RequestMapping("/menubutton")
-    public List<Tree<Menu>> getMenuButton() {
-        User user = UserUtils.getCurrentUser();
-        return userService.getMenuButton(user.getUsercode());
-    }
-
-    @RequestMapping("/menusTree")
-    public List<Tree<Menu>> getUserMenusTree() {
-        List<Menu> menus = userService.getMenus(UserUtils.getCurrentUser().getUsercode());
-        List<Tree<Menu>> treeList = new ArrayList<>();
-        menus.forEach(menu -> {
-            Tree<Menu> tree = new Tree<>();
-            tree.setId(menu.getId());
-            tree.setParentId(menu.getParentId());
-            tree.setText(menu.getName());
-            tree.setUrl(menu.getUrl());
-            tree.setIconCls(menu.getIcon());
-            Map<String,Object> attributes = new HashMap<>();
-            attributes.put("url",menu.getUrl());
-            tree.setAttributes(attributes);
-            treeList.add(tree);
-        });
-
-        return TreeUtils.build(treeList);
-    }
-    
-    /**
-     * 没有树形结构的菜单json
-     * @return
-     */
-    @GetMapping("/menus")
-    public Response<List<Menu>> getUserMenus() {
-    	Response<List<Menu>> response = new Response<>(StatusCode.OK);
-    	if(null!=UserUtils.getCurrentUser()) {
-    		response.setData(userService.getMenus(UserUtils.getCurrentUser().getUsercode()));
-    	}else {
-    		response.setCode(StatusCode.USER_LOGIN_REQUIRED.getCode());
-    	}
-        return response;
-    }
-
-    @PostMapping("/list")
-    @RequiresPermissions("user:list")
-    public QueryPageResult queryList(int page,int rows,String name,Long department) {
-        QueryPageRequest<User> queryPageRequest = new QueryPageRequest();
+    @GetMapping("/user")
+    public QueryPageResult list(@RequestParam("pageNum") int pageNum,@RequestParam("pageSize") int pageSize,@RequestParam("keyword") String keyword){
+        QueryPageRequest queryPageRequest = new QueryPageRequest();
+        queryPageRequest.setPage(pageNum);
+        queryPageRequest.setRows(pageSize);
         User user = new User();
-        user.setName(name);
-        user.setDepartment(department);
-        queryPageRequest.setPage(page);
-        queryPageRequest.setRows(rows);
-        queryPageRequest.setData(user);
-        return PageUtils.queryPage(queryPageRequest, () -> userService.queryList(queryPageRequest.getData()));
+        user.setUsercode(keyword);
+        user.setName(keyword);
+        QueryPageResult queryPageResult = PageUtils.queryPage(queryPageRequest, () -> userService.queryList(user));
+        queryPageResult.setPageNum(pageNum);
+        queryPageResult.setPageSize(pageSize);
+        return queryPageResult;
     }
 
-    @PostMapping("/listAll")
-    public List<User> queryList(@RequestParam(value = "select",required = false)Integer select, User user){
-        List<User> list = userService.queryList(user);
-        if (null!=select && select>0){
-            User u = new User();
-            u.setId(-1l);
-            u.setName("全部");
-            u.setUsercode("全部");
-            list.add(0,u);
+    @PostMapping("/user")
+    public Boolean add(@RequestBody User user) {
+        //监测用户名是否重复
+        if(userService.checkUsername(user.getUsercode())) {
+            user.setStatus(1);
+            user.setCreateTime(new Date());
+            passwordHelper.encryptPassword(user);
+            user.setCreateUser(user.getCreateUser() == null ? UserUtils.getCurrentUser().getId() : user.getCreateUser());
+            userMapper.insertSelective(user);
+        }else{
+            throw new BusinessException(StatusCode.SYSTEM_ERROR,"账号已存在");
         }
-        return list;
+        return true;
     }
 
-    @RequiresPermissions(value= {"user:detail","user:update"},logical=Logical.OR)
-    @GetMapping("/detail/{id}")
-    public User findById(@PathVariable Long id) {
-        return userService.findById(id);
+    @PutMapping("/user")
+    public Boolean update(@RequestBody User user) {
+        //更新用户信息
+        user.setPassword(null); //这里设置为null，结合 updateNotNull 方法，表示不更新密码
+        user.setUpdateTime(new Date());
+        user.setSalt(null);
+        user.setUpdateUser(UserUtils.getCurrentUser().getId());
+        userService.updateNotNull(user);
+        return true;
     }
 
-    @PostMapping("/add")
-    //@RequiresPermissions("user:add")
-    //@Log("新增用户")
-    public String add(User user) {
-        synchronized (this){
-            //监测用户名是否重复
-            if(userService.checkUsername(user.getUsercode())) {
-                // save user
-                user.setStatus(1);
-                user.setCreateTime(new Date());
-                passwordHelper.encryptPassword(user);
-                user.setCreateUser(user.getCreateUser() == null ? UserUtils.getCurrentUser().getId() : user.getCreateUser());
+    @DeleteMapping("/user/{id}")
+    public Boolean delete(@PathVariable Long id) {
+        userService.delete(Arrays.asList(id));
+        return true;
+    }
 
-                userMapper.insertSelective(user);
-                return "0";
-            }else{
-                return "用户名称重复";
-            }
-        }
+    @GetMapping("/user/{id}")
+    public User find(@PathVariable Long id) {
+        return userMapper.selectByPrimaryKey(id);
     }
 
     @PostMapping("/checkUsername")
@@ -188,54 +109,8 @@ public class UserController {
     	return userService.checkPassword(user.getPassword());
     }
 
-    @PostMapping("/update")
-    //@RequiresPermissions("user:update")
-    //@Log("更新用户")
-    public String update(@RequestParam("id")Long id, UserWithRole user) {
-        synchronized (this){
-            user.setId(id);
-            //更新用户信息
-            user.setPassword(null); //这里设置为null，结合 updateNotNull 方法，表示不更新密码
-            user.setUpdateTime(new Date());
-            user.setSalt(null);
-            user.setUpdateUser(UserUtils.getCurrentUser().getId());
-            userService.updateNotNull(user);
-            return "0";
-        }
-    }
-
-    @PostMapping("/updateUserRole")
-    public String update(Long userId,String roleIds) {
-        synchronized (this){
-            UserWithRole user = new UserWithRole();
-            user.setId(userId);;
-            if (StringUtils.isNotBlank(roleIds)){
-                user.setRoleIds(Arrays.stream(roleIds.split(",")).map(s -> Long.parseLong(s.trim())).collect(Collectors.toList()));
-            }else {
-                user.setRoleIds(new ArrayList<>());
-            }
-            userService.update(user);
-            return "0";
-        }
-    }
-
-    @PostMapping("/pcupdate")
-    //@Log("更新用户")
-    public Boolean pcupdate(@RequestBody User user) {
-    	userService.pcupdate(user);
-    	return true;
-    }
-
-    @PostMapping("/delete")
-    //@RequiresPermissions("user:delete")
-    //@Log("删除用户")
-    public Boolean delete(Long id) {
-        userService.delete(Arrays.asList(id));
-        return true;
-    }
 
     @PostMapping("/changeAvatar")
-    //@Log("修改用户头像")
     public Boolean changeAvatar(String url) {
         User user = UserUtils.getCurrentUser();
         user.setAvatar(url);
@@ -244,17 +119,11 @@ public class UserController {
     }
 
     @PostMapping("/updatePassword")
-    //@Log("更新用户密码")
     public Boolean updatePassword(@RequestBody User user) {
         userService.updatePassword(user);
         return true;
     }
 
-    /**
-     * isms 系统更新密码
-     * @param user
-     * @return
-     */
     @PostMapping("/modifyPassword")
     public Response modifyPassword(User user){
         userService.updatePassword(user);
@@ -262,8 +131,6 @@ public class UserController {
     }
     
     @PostMapping("/resetPassword/{userId}")
-    @RequiresPermissions("user:resetPassword")
-    //@Log("重置用户密码")
     public Boolean resetPassword(@PathVariable Long userId) {
     	String password = userService.resetPassword(userId);
     	//异步发送邮件
@@ -271,48 +138,92 @@ public class UserController {
     	return true;
     }
 
-    @PostMapping("/achievementRank")
-    public List<User> achievementRank(){
-        List<User> userList = new ArrayList<>();
-        User user = UserUtils.getCurrentUser();
-        if(null!=user) {
-            user = userMapper.selectByPrimaryKey(user.getId());
-            //获取用户权限
-            List<Menu> menuList = menuService.findUserPermissions(user.getUsercode());
-            //获取用户权限按钮名称
-            Map<String, Object> btnName = new LinkedHashMap<String, Object>();
-            Set<String> permSet = null;
-            if (null != menuList && !menuList.isEmpty() && null != menuList.get(0)) {
-                permSet = menuList.stream().map(Menu::getPerms).collect(Collectors.toSet());
-                btnName = menuList.stream().collect(Collectors.toMap(Menu::getPerms, Menu::getName, (key1, key2) -> key2));
-            }
+    @PostMapping("/user/upload")
+    public Map<String,String> uplaod(HttpServletRequest req, @RequestParam("file") MultipartFile file) {
+        Map map=new HashMap<String,String>();
+        map.put("status_code","200");
+        String destFileName = "";
+        String fileName="";
+        try {
+            //根据创建时间对文件进行重命名
+            fileName = System.currentTimeMillis() + "."+ file.getOriginalFilename().split("\\.")[1];
+            //上传文件存储的位置
+            destFileName = "C:\\upload\\" + fileName;
+            //防止改文件夹不存在，创建一个新文件夹
+            File destFile = new File(destFileName);
+            destFile.getParentFile().mkdirs();
+            //将文件存储到该位置
+            IOUtils.copy(file.getInputStream(),new FileOutputStream(destFile));
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error(e.getMessage());
+        }
+        map.put("avatar",fileName);
+        return map;
+    }
 
-            //判断是否有查看所有员工当月业绩排行榜权限
-            if(permSet.contains("rank:all")){
-                userList = userMapper.achievementRankAll(monthFirstDay(),monthLastDay());
-            }else{
-                //如果有部门，默认查看本部门员工当月业绩排行榜权限
-                if (null!=user.getDepartment() && user.getDepartment()>0){
-                    userList = userMapper.achievementRank(user.getDepartment(),monthFirstDay(),monthLastDay());
+    @GetMapping("/user/preview/{avatar}")
+    public void readImage(@PathVariable("avatar") String avatar, HttpServletResponse response){
+        String destFileName = "";
+        InputStream fis = null;
+        try {
+            //上传文件存储的位置
+            destFileName = "C:\\upload\\" + avatar;
+
+            File destFile = new File(destFileName);
+
+            fis = new FileInputStream(destFile);
+
+            response.reset();
+            response.setContentType("application/octet-stream");
+            response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode(avatar+"", "UTF-8"));
+            ServletOutputStream outputStream = response.getOutputStream();
+
+            IOUtils.copy(fis,outputStream);
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
-        return userList;
     }
 
-    //获取当前月第一天的日期
-    public Date monthFirstDay(){
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date());
-        cal.set(Calendar.DAY_OF_MONTH, cal.getActualMinimum(Calendar.DAY_OF_MONTH));
-        return cal.getTime();
-    }
+    @GetMapping("/user/download/{id}")
+    public void readImage(@PathVariable("id") Long id, HttpServletResponse response){
+        String destFileName = "";
+        InputStream fis = null;
+        try {
+            User user = userMapper.selectByPrimaryKey(id);
+            //上传文件存储的位置
+            destFileName = "C:\\upload\\" + user.getAvatar();
 
-    //获取当前月最后一天的日期
-    public Date monthLastDay(){
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date());
-        cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
-        return cal.getTime();
+            File destFile = new File(destFileName);
+
+            fis = new FileInputStream(destFile);
+
+            response.reset();
+            response.setContentType("application/octet-stream");
+            response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode(user.getName()+"", "UTF-8"));
+            ServletOutputStream outputStream = response.getOutputStream();
+
+            IOUtils.copy(fis,outputStream);
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }

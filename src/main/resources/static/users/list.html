@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>动作库</title>
+<title>用户管理</title>
 <!--字体图标-->
 <link href="../javaex/pc/css/icomoon.css" rel="stylesheet" />
 <!--骨架样式-->
@@ -42,8 +42,11 @@
 								<tr>
 									<th class="javaex-table-num-col"></th>
 									<!--<th class="javaex-table-filter-col"><input type="checkbox" fill listen="listen-1" /> </th>-->
-									<th>分类</th>
-									<th>文件名</th>
+									<th>账号</th>
+									<th>昵称</th>
+									<th>头像</th>
+									<th>身高</th>
+									<th>体重</th>
 									<th style="width:120px;">操作</th>
 								</tr>
 							</thead>
@@ -51,11 +54,14 @@
 								<tr>
 									<td>1</td>
 									<!--<td><input type="checkbox" fill listen="listen-1-2" /> </td>-->
-									<td>瑜伽</td>
-									<td>test.mp4</td>
+									<th>账号</th>
+									<th>昵称</th>
+									<th>头像</th>
+									<th>身高</th>
+									<th>体重</th>
 									<td>
-										<a href="javascript:;" onclick="edit('7','你好')" class="javaex-link primary">播放</a>
-										<a href="javascript:;" onclick="del(this, '7')" class="javaex-link danger ml-10">删除</a>
+										<!--<a href="javascript:;" onclick="edit('7','你好')" class="javaex-link primary">编辑</a>
+										<a href="javascript:;" onclick="del(this, '7')" class="javaex-link danger ml-10">删除</a>-->
 									</td>
 								</tr>
 							</tbody>
@@ -102,7 +108,7 @@
 			//请求的媒体类型
 			contentType: "application/json;charset=UTF-8",
 			//请求地址
-			url : "/action?pageNum="+pageNum+"&pageSize="+pageSize+"&keyword="+keyword,
+			url : "/user?pageNum="+pageNum+"&pageSize="+pageSize+"&keyword="+keyword,
 			//数据，json字符串
 			//data : JSON.stringify({"pageNum":pageNum,"keyword": keyword,"pageSize": pageSize}),
 			//请求成功
@@ -119,9 +125,14 @@
 				$.each(tips, function(index, value) {
 					console.log(value);
 					var num = pageSize * (pageNum - 1) + index + 1;
-					text += "<tr><td>" + num + "</td><td>" + value.type +
-							"</td><td>" + value.name + "</td>" +
-							"<td><a href='javascript:;' onclick='play("+value.id+")' class='javaex-link primary'>播放</a><a href='javascript:;' onclick='del(this, "+value.id+")' class='javaex-link danger ml-10'>删除</a></td></tr>";
+					text += "<tr >" +
+							"<td>" + num + "</td>"+
+							"<td>" + value.usercode + "</td>"+
+							"<td>" + value.name + "</td>"+
+							"<td><img style='border-radius:30px;' width='60px' height='60px' src='/user/download/"+value.id+"'/></td>"+
+							"<td>" + value.height + "</td>"+
+							"<td>" + value.weight + "</td>"+
+							"<td><a href='javascript:;' onclick='edit("+value.id+")' class='javaex-link primary'>编辑</a><a href='javascript:;' onclick='del(this, "+value.id+")' class='javaex-link danger ml-10'>删除</a></td></tr>";
 				});
 				$("#tbody").html(text);
 
@@ -149,27 +160,6 @@
 	}
 
 	/**
-	 * 播放
-	 */
-	function play(id){
-		var title = "在线观看";
-
-		top.javaex.dialog({
-			type : "dialog",
-			title : title,
-			url : "/actions/play.html?id="+id,	// 页面地址或网址或请求地址
-			width : "600",	// 弹出层宽度
-			height : "400",	// 弹出层高度
-			close : function() {
-				console.log("右上角点击X关闭时的回调");
-				// 如果你想阻止弹出层关闭，直接 return false; 即可
-				// return false;
-			}
-		});
-
-	}
-
-	/**
 	 * 添加/编辑
 	 */
 	function edit(id,tip) {
@@ -182,7 +172,7 @@
 		top.javaex.dialog({
 			type : "dialog",
 			title : title,
-			url : "/actions/edit.html?id="+id+"&tip="+tip,	// 页面地址或网址或请求地址
+			url : "/users/edit.html?id="+id,	// 页面地址或网址或请求地址
 			width : "600",	// 弹出层宽度
 			height : "400",	// 弹出层高度
 			close : function() {
@@ -211,7 +201,7 @@
 			//请求的媒体类型
 			contentType: "application/json;charset=UTF-8",
 			//请求地址
-			url : "/action/"+id,
+			url : "/user/"+id,
 			//数据，json字符串
 			//data : JSON.stringify(json),
 			//请求成功

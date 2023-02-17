@@ -52,9 +52,6 @@ public class User implements Serializable {
     @Column(name = "update_user")
     private Long updateUser;
 
-    @Column(name = "paas_flag")
-    private String paasFlag;
-
     private String avatar;
 
     private Long phone;
@@ -75,7 +72,7 @@ public class User implements Serializable {
 
     @Transient
     private String tenantAdmin;
-    
+
     @Transient
     private String oldpwd;
     
@@ -92,7 +89,8 @@ public class User implements Serializable {
     @Transient
     private float amount;
 
-    private Long department;
+    private String height;
 
-    private String statistic;
+    private String weight;
+
 }

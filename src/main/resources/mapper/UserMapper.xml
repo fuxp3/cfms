@@ -66,16 +66,12 @@
     </select>
     
     <select id="queryList" resultMap="userMap">
-        select u.id,u.statistic, u.usercode, u.name,u.password,u.department, u.create_time, u.avatar, u.phone, u.email, u.sex, u.status, u.description, u.user_type,
-               (select d.name from t_department d where d.id = u.department ) departmentName
+        select *
         from t_user u
         where 1=1
         <if test="name != null and name != ''">
           and (u.name like CONCAT('%',#{name},'%')  or u.usercode like CONCAT('%',#{name},'%'))
         </if>
-		<if test="department != null and department > 0 ">
-			and u.department = #{department}
-		</if>
         <if test="usercode != null and usercode != ''">
           and usercode = #{usercode}
         </if>

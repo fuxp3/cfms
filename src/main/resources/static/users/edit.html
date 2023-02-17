@@ -1,0 +1,282 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>健康小卫士</title>
+<!--字体图标-->
+<link href="../javaex/pc/css/icomoon.css" rel="stylesheet" />
+<!--骨架样式-->
+<link href="../javaex/pc/css/common.css" rel="stylesheet" />
+<!--皮肤-->
+<link href="../javaex/pc/css/skin/default.css" rel="stylesheet" />
+<!--jquery，如果不使用jquery高版本的新功能的话，不建议修改版本-->
+<script src="../javaex/pc/lib/jquery-1.7.2.min.js"></script>
+<!--核心组件-->
+<script src="../javaex/pc/js/javaex.js"></script>
+<!--表单验证-->
+<script src="../javaex/pc/js/javaex-formVerify.js"></script>
+</head>
+
+<body>
+	<div class="javaex-page-wrap">
+		<div class="javaex-page-content">
+			<div class="javaex-page-body">
+				<div class="javaex-main">
+					<form id="form">
+						<input type="hidden" id="id" name="id" value=""/>
+						<input type="hidden" id="avatar" name="avatar" value=""/>
+
+						<div class="javaex-unit clear">
+							<div class="javaex-unit-left"><p class="subtitle required">账号</p></div>
+							<div class="javaex-unit-right">
+								<input type="text" class="javaex-text" id="usercode" data-type="required" placeholder="请输入账号" />
+							</div>
+						</div>
+
+						<div class="javaex-unit clear" id="passwordDiv">
+							<div class="javaex-unit-left"><p class="subtitle required">密码</p></div>
+							<div class="javaex-unit-right">
+								<input type="password" class="javaex-text" id="password" data-type="required" placeholder="请输入密码" />
+							</div>
+						</div>
+
+						<div class="javaex-unit clear">
+							<div class="javaex-unit-left"><p class="subtitle required">昵称</p></div>
+							<div class="javaex-unit-right">
+								<input type="text" class="javaex-text" id="name" data-type="required" placeholder="请输入昵称" />
+							</div>
+						</div>
+
+						<div class="javaex-unit clear">
+							<div class="javaex-unit-left"><p class="subtitle">头像</p></div>
+							<div class="javaex-unit-right">
+								<div id="container" class="javaex-file-container">
+									<div class="javaex-cover">
+										<!--如果不需要回显图片，src留空即可-->
+										<img class="javaex-upload-img-cover" src=""/>
+										<input type="file" class="javaex-file" id="upload" accept="image/*" />
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="javaex-unit clear">
+							<div class="javaex-unit-left"><p class="subtitle">身高</p></div>
+							<div class="javaex-unit-right">
+								<input type="text" class="javaex-text" id="height" placeholder="请输入身高" />
+							</div>
+						</div>
+
+						<div class="javaex-unit clear">
+							<div class="javaex-unit-left"><p class="subtitle">体重</p></div>
+							<div class="javaex-unit-right">
+								<input type="text" class="javaex-text" id="weight" placeholder="请输入体重" />
+							</div>
+						</div>
+
+					</form>
+				</div>
+			</div>
+			
+			<div class="javaex-page-footer">
+				<input type="button" onclick="save()" class="javaex-btn blue" value="保存" />
+				<input type="button" onclick="closeDialog()" class="javaex-btn wathet" value="关闭" />
+			</div>
+		</div>
+	</div>
+</body>
+<script>
+
+	javaex.uploadImage({
+		url : "/user/upload",	// 请求路径
+		id : "upload",			// <input type="file" />的id
+		param : {
+			"file" : "file",    // 参数名称，左边的 "file" 是固定必须的。   右边的 "file"是参数名，Spring中与MultipartFile的参数名保持一致
+			"type" : "2",    // 除了file这个key，其他都是MultipartFile以外的参数（自定义）
+			"action" : "upload"
+		},
+		dataType : "url",		// 返回的数据类型：base64 或 url
+		isShowTip : true,
+		callback : function (rtn) {
+			console.log(rtn);
+			// 单图上传需要手动填充图片
+			$("#container img").attr("src", "/user/preview/"+rtn.data.avatar);
+			$("#avatar").val(rtn.data.avatar);
+		},
+		deleteImage : function() {
+			console.log("做点什么吧");
+		},
+		chooseBefore : function() {
+			console.log("选择文件前的回调函数");
+		},
+		chooseAfter : function(rtn) {
+			console.log("选择文件后的回调函数");
+			// 选择文件后的回调函数，会返回一些文件信息
+			console.log(rtn.filename);
+			console.log(rtn.filesize);
+			console.log(rtn.fileSuffix);
+		},
+		uploadText : "头像上传"
+	});
+
+	/**
+	 * 保存
+	 */
+	function save() {
+		if (!javaexVerify()) {
+			return;
+		}
+		
+		// ajax提交
+		var id = $("#id").val();
+		var usercode = $("#usercode").val();
+		var password = $("#password").val();
+		var avatar = $("#avatar").val();
+		var height = $("#height").val();
+		var weight = $("#weight").val();
+		var name = $("#name").val();
+
+		if (avatar == "") {
+			avatar = "default.jpg";
+		}
+
+		if (id==""){
+			var json = {"usercode":usercode,"password":password,"name":name,"avatar":avatar,"height":height,"weight":weight};
+			$.ajax({
+				//请求方式
+				type : "POST",
+				//请求的媒体类型
+				contentType: "application/json;charset=UTF-8",
+				//请求地址
+				url : "/user",
+				//数据，json字符串
+				data : JSON.stringify(json),
+				//请求成功
+				success : function(result) {
+					console.log(result);
+					// 获取集合属性
+					var code = result.code;
+
+					if (code == 0) {
+						// 关闭弹出层
+						parent.javaex.close();
+						// 刷新页面
+						parent.parent.document.getElementById("page").contentWindow.search();
+					}else{
+						javaex.message({
+							content : result.msg,
+							type : "error"
+						});
+					}
+				},
+				//请求失败，包含具体的错误信息
+				error : function(e){
+					console.log(e.status);
+					console.log(e.responseText);
+				}
+			});
+		}else {
+			var json = {"id":id,"usercode":usercode,"password":password,"name":name,"avatar":avatar,"height":height,"weight":weight};
+			$.ajax({
+				//请求方式
+				type : "PUT",
+				//请求的媒体类型
+				contentType: "application/json;charset=UTF-8",
+				//请求地址
+				url : "/user",
+				//数据，json字符串
+				data : JSON.stringify(json),
+				//请求成功
+				success : function(result) {
+					console.log(result);
+					// 获取集合属性
+					var code = result.code;
+
+					if (code == 0) {
+						// 关闭弹出层
+						parent.javaex.close();
+						// 刷新页面
+						parent.parent.document.getElementById("page").contentWindow.search();
+					}else{
+						javaex.message({
+							content : result.msg,
+							type : "error"
+						});
+					}
+				},
+				//请求失败，包含具体的错误信息
+				error : function(e){
+					console.log(e.status);
+					console.log(e.responseText);
+				}
+			});
+		}
+
+	}
+	
+	/**
+	 * 关闭弹窗
+	 */
+	function closeDialog() {
+		parent.javaex.close();
+	}
+
+	function getQueryString(name) {
+		var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+		var r = window.location.search.substr(1).match(reg); //获取url中"?"符后的字符串并正则匹配
+		var context = "";
+		if (r != null)
+			context = decodeURI(r[2]);
+		reg = null;
+		r = null;
+		return context == null || context == "" || context == "undefined" ? "" : context;
+	}
+
+	$(function (){
+		var id = getQueryString("id");
+		if (id!=""){
+			$("#id").val(id);
+			$.ajax({
+				//请求方式
+				type : "GET",
+				//请求的媒体类型
+				contentType: "application/json;charset=UTF-8",
+				//请求地址
+				url : "/user/"+id,
+				//数据，json字符串
+				//data : JSON.stringify(json),
+				//请求成功
+				success : function(result) {
+					console.log(result);
+					// 获取集合属性
+					var code = result.code;
+
+					if (code == 0) {
+						$("#passwordDiv").hide();
+						$("#usercode").val(result.data.usercode);
+						$("#password").val(result.data.password);
+						$("#name").val(result.data.name);
+						$("#container img").removeClass("javaex-upload-img-cover")
+						$("#container img").addClass("javaex-upload-img")
+						$("#container img").attr("src", "/user/preview/"+result.data.avatar);
+						$("#height").val(result.data.height);
+						$("#weight").val(result.data.weight);
+					}else{
+						javaex.message({
+							content : result.msg,
+							type : "error"
+						});
+					}
+				},
+				//请求失败，包含具体的错误信息
+				error : function(e){
+					console.log(e.status);
+					console.log(e.responseText);
+				}
+			});
+		}else {
+			$("#id").val("");
+		}
+	});
+</script>
+</html>
