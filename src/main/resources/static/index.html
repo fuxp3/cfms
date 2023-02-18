@@ -140,14 +140,14 @@ main {background:#f1f1f1;padding-bottom:0;display:block;flex:1;}
 					<div class="javaex-header-menu javaex-header-user">
 						<div class="javaex-dropdown">
 							<div>
-								<img src="http://webimg.javaex.cn/bdd3fdaf20e74fb08b0ebe56495b3741" class="javaex-header-user-avatar" />
-								<span class="javaex-header-username">画航听雨眠</span>
+								<img src="" class="javaex-header-user-avatar" id="avatar"/>
+								<span class="javaex-header-username" id="name"></span>
 								<i class="icon icon-caret-down"></i>
 							</div>
 							
 							<ul class="javaex-dropdown-menu javaex-animated-slide-down">
-								<li class="javaex-dropdown-menu-item"><a href="javascript:;">个人信息</a></li>
-								<li class="javaex-dropdown-menu-item"><a href="javascript:;" id="logout">退出登录</a></li>
+								<!--<li class="javaex-dropdown-menu-item"><a href="javascript:;">个人信息</a></li>-->
+								<li class="javaex-dropdown-menu-item"><a href="javascript:;" id="logout">注销</a></li>
 								<div class="popper-arrow"></div>
 							</ul>
 						</div>
@@ -199,6 +199,38 @@ main {background:#f1f1f1;padding-bottom:0;display:block;flex:1;}
 	}
 
 	$(function(){
+		$.ajax({
+			//请求方式
+			type : "GET",
+			//请求的媒体类型
+			contentType: "application/json;charset=UTF-8",
+			//请求地址
+			url : "/user/info",
+			//数据，json字符串
+			//data : JSON.stringify(json),
+			//请求成功
+			success : function(result) {
+				console.log(result);
+				// 获取集合属性
+				var code = result.code;
+
+				if (code == 0) {
+					$("#name").text(result.data.name);
+					$("#avatar").attr("src", "/user/download/"+result.data.id);
+				}else{
+					javaex.message({
+						content : result.msg,
+						type : "error"
+					});
+				}
+			},
+			//请求失败，包含具体的错误信息
+			error : function(e){
+				console.log(e.status);
+				console.log(e.responseText);
+			}
+		});
+
 		$("#logout").on("click",function(){
 			$.get("/logout",function(result){
 				if(result.code=="0"){
