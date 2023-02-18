@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>动作库</title>
+<title>评论</title>
 <!--字体图标-->
 <link href="../javaex/pc/css/icomoon.css" rel="stylesheet" />
 <!--骨架样式-->
@@ -31,17 +31,7 @@
 					<div class="javaex-list-toolbar clear">
 						<span class="fl"><button class="javaex-btn primary" onclick="edit()">添加</button></span>
 						<span class="fr javaex-search-group">
-							<!--<input type="text" class="javaex-text" id="keyword" placeholder="请输入搜索内容" />-->
-							<select id="select">
-									<option value="">请选择</option>
-									<option value="胸肌">胸肌</option>
-									<option value="背阔肌">背阔肌</option>
-									<option value="肩部">肩部</option>
-									<option value="腹部">腹部</option>
-									<option value="手臂">手臂</option>
-									<option value="瑜伽">瑜伽</option>
-									<option value="瑜伽">拉伸</option>
-							</select>
+							<input type="text" class="javaex-text" id="keyword" placeholder="请输入搜索内容" />
 							<button class="javaex-btn primary" onclick="search()">搜索</button>
 						</span>
 					</div>
@@ -52,8 +42,7 @@
 								<tr>
 									<th class="javaex-table-num-col"></th>
 									<!--<th class="javaex-table-filter-col"><input type="checkbox" fill listen="listen-1" /> </th>-->
-									<th>分类</th>
-									<th>文件名</th>
+									<th>评论</th>
 									<th style="width:120px;">操作</th>
 								</tr>
 							</thead>
@@ -61,11 +50,9 @@
 								<tr>
 									<td>1</td>
 									<!--<td><input type="checkbox" fill listen="listen-1-2" /> </td>-->
-									<td>瑜伽</td>
-									<td>test.mp4</td>
+									<td>我发布了一条评论</td>
 									<td>
-										<a href="javascript:;" onclick="edit('7','你好')" class="javaex-link primary">播放</a>
-										<a href="javascript:;" onclick="del(this, '7')" class="javaex-link danger ml-10">删除</a>
+										<a href="javascript:;" onclick="examine('7')" class="javaex-link primary">审核通过</a>
 									</td>
 								</tr>
 							</tbody>
@@ -83,11 +70,6 @@
 	</div>
 </body>
 <script>
-	javaex.select({
-		id : "select",
-		isSearch : false
-	});
-
 	function pageTotal(rowCount, pageSize) {
 		if (rowCount == null || rowCount == "") {
 			return 0;
@@ -104,8 +86,7 @@
 	}
 
 	function search() {
-		//var keyword = $("#keyword").val();
-		var keyword = $('#select option:selected').val();
+		var keyword = $("#keyword").val();
 		rander(1,10,keyword);
 	}
 
@@ -118,7 +99,7 @@
 			//请求的媒体类型
 			contentType: "application/json;charset=UTF-8",
 			//请求地址
-			url : "/action?pageNum="+pageNum+"&pageSize="+pageSize+"&keyword="+keyword,
+			url : "/tip?pageNum="+pageNum+"&pageSize="+pageSize+"&keyword="+keyword,
 			//数据，json字符串
 			//data : JSON.stringify({"pageNum":pageNum,"keyword": keyword,"pageSize": pageSize}),
 			//请求成功
@@ -135,9 +116,8 @@
 				$.each(tips, function(index, value) {
 					console.log(value);
 					var num = pageSize * (pageNum - 1) + index + 1;
-					text += "<tr><td>" + num + "</td><td>" + value.type +
-							"</td><td>" + value.name + "</td>" +
-							"<td><a href='javascript:;' onclick='play("+value.id+")' class='javaex-link primary'>播放</a><a href='javascript:;' onclick='del(this, "+value.id+")' class='javaex-link danger ml-10'>删除</a></td></tr>";
+					text += "<tr ><td>" + num + "</td><td>" + value.tip +
+							"</td><td><a href='javascript:;' onclick='edit("+value.id+",\""+value.tip+"\")' class='javaex-link primary'>编辑</a><a href='javascript:;' onclick='del(this, "+value.id+")' class='javaex-link danger ml-10'>删除</a></td></tr>";
 				});
 				$("#tbody").html(text);
 
@@ -165,27 +145,6 @@
 	}
 
 	/**
-	 * 播放
-	 */
-	function play(id){
-		var title = "在线观看";
-
-		top.javaex.dialog({
-			type : "dialog",
-			title : title,
-			url : "/actions/play.html?id="+id,	// 页面地址或网址或请求地址
-			width : "600",	// 弹出层宽度
-			height : "400",	// 弹出层高度
-			close : function() {
-				console.log("右上角点击X关闭时的回调");
-				// 如果你想阻止弹出层关闭，直接 return false; 即可
-				// return false;
-			}
-		});
-
-	}
-
-	/**
 	 * 添加/编辑
 	 */
 	function edit(id,tip) {
@@ -198,7 +157,7 @@
 		top.javaex.dialog({
 			type : "dialog",
 			title : title,
-			url : "/actions/edit.html?id="+id+"&tip="+tip,	// 页面地址或网址或请求地址
+			url : "/guard/edit.html?id="+id+"&tip="+tip,	// 页面地址或网址或请求地址
 			width : "600",	// 弹出层宽度
 			height : "400",	// 弹出层高度
 			close : function() {
@@ -227,7 +186,7 @@
 			//请求的媒体类型
 			contentType: "application/json;charset=UTF-8",
 			//请求地址
-			url : "/action/"+id,
+			url : "/tip/"+id,
 			//数据，json字符串
 			//data : JSON.stringify(json),
 			//请求成功

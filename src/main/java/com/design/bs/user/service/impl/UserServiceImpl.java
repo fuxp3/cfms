@@ -120,11 +120,11 @@ public class UserServiceImpl extends BaseServiceImpl<User> implements IUserServi
 
     @Override
     public List<User> queryList(User user) {
-    	List<User> users = userMapper.queryList(user);
-        users.forEach(u->{
-            u.setRoles(u.getRoleNames().stream().collect(Collectors.joining(",")));
-        });
-        return users;
+        Example example = new Example(User.class);
+        example.createCriteria().andLike("usercode", "%" + user.getName() + "%")
+                .andLike("name", "%" + user.getName() + "%");
+        example.orderBy("createTime").desc();
+        return userMapper.selectByExample(example);
     }
     
     @Override
