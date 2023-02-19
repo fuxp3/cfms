@@ -9,6 +9,8 @@ import com.design.bs.core.utils.PageUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
+
 @RestController
 public class CommentController {
 
@@ -33,7 +35,8 @@ public class CommentController {
 
     @PostMapping("/comment")
     public Boolean add(@RequestBody Comment comment) {
-        comment.setComment("未审核");
+        comment.setState("未审核");
+        comment.setCreateTime(new Date());
         commentService.save(comment);
         return true;
     }
