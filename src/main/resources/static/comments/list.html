@@ -29,7 +29,7 @@
 			<div class="javaex-page-body">
 				<div class="content">
 					<div class="javaex-list-toolbar clear">
-						<span class="fl"><button class="javaex-btn primary" onclick="edit()">添加</button></span>
+						<!--<span class="fl"><button class="javaex-btn primary" onclick="edit()">添加</button></span>-->
 						<span class="fr javaex-search-group">
 							<input type="text" class="javaex-text" id="keyword" placeholder="请输入搜索内容" />
 							<button class="javaex-btn primary" onclick="search()">搜索</button>
@@ -41,20 +41,22 @@
 							<thead>
 								<tr>
 									<th class="javaex-table-num-col"></th>
-									<!--<th class="javaex-table-filter-col"><input type="checkbox" fill listen="listen-1" /> </th>-->
 									<th>评论</th>
+									<th>账号</th>
+									<th>状态</th>
 									<th style="width:120px;">操作</th>
 								</tr>
 							</thead>
 							<tbody id = "tbody">
-								<tr>
+								<!--<tr>
 									<td>1</td>
-									<!--<td><input type="checkbox" fill listen="listen-1-2" /> </td>-->
 									<td>我发布了一条评论</td>
+									<td>待审核</td>
 									<td>
-										<a href="javascript:;" onclick="examine('7')" class="javaex-link primary">审核通过</a>
+										<a href="javascript:;" onclick="pass(this,'7')" class="javaex-link primary">通过</a>
+										<a href="javascript:;" onclick="fail(this,'7')" class="javaex-link warning">不通过</a>
 									</td>
-								</tr>
+								</tr>-->
 							</tbody>
 						</table>
 					</div>
@@ -99,7 +101,7 @@
 			//请求的媒体类型
 			contentType: "application/json;charset=UTF-8",
 			//请求地址
-			url : "/tip?pageNum="+pageNum+"&pageSize="+pageSize+"&keyword="+keyword,
+			url : "/comment?pageNum="+pageNum+"&pageSize="+pageSize+"&keyword="+keyword,
 			//数据，json字符串
 			//data : JSON.stringify({"pageNum":pageNum,"keyword": keyword,"pageSize": pageSize}),
 			//请求成功
@@ -116,8 +118,11 @@
 				$.each(tips, function(index, value) {
 					console.log(value);
 					var num = pageSize * (pageNum - 1) + index + 1;
-					text += "<tr ><td>" + num + "</td><td>" + value.tip +
-							"</td><td><a href='javascript:;' onclick='edit("+value.id+",\""+value.tip+"\")' class='javaex-link primary'>编辑</a><a href='javascript:;' onclick='del(this, "+value.id+")' class='javaex-link danger ml-10'>删除</a></td></tr>";
+					text += "<tr ><td>" + num + "</td>" +
+							"<td>" + value.comment +"</td>" +
+							"<td>" + value.usercode +"</td>" +
+							"<td>" + value.state +"</td>" +
+							"<td><a href='javascript:;' onclick='pass(this,"+value.id+")' class='javaex-link primary'>通过</a><a href='javascript:;' onclick='fail(this, "+value.id+")' class='javaex-link warning ml-10'>不通过</a></td></tr>";
 				});
 				$("#tbody").html(text);
 
@@ -168,6 +173,86 @@
 		});
 	}
 
+	function pass(obj, id){
+		javaex.deleteDialog(obj, {
+			content : "确定审核通过？",
+			confirm : function() {
+				var json = {"id":id,"state":"已通过"};
+				$.ajax({
+					//请求方式
+					type : "PUT",
+					//请求的媒体类型
+					contentType: "application/json;charset=UTF-8",
+					//请求地址
+					url : "/comment",
+					//数据，json字符串
+					data : JSON.stringify(json),
+					//请求成功
+					success : function(result) {
+						console.log(result);
+						// 获取集合属性
+						var code = result.code;
+
+						if (code == 0) {
+							// 刷新页面
+							search();
+						}else{
+							javaex.message({
+								content : result.msg,
+								type : "error"
+							});
+						}
+					},
+					//请求失败，包含具体的错误信息
+					error : function(e){
+						console.log(e.status);
+						console.log(e.responseText);
+					}
+				});
+			}
+		});
+	}
+
+	function fail(obj, id){
+		javaex.deleteDialog(obj, {
+			content : "确定审核不通过？",
+			confirm : function() {
+				var json = {"id":id,"state":"未通过"};
+				$.ajax({
+					//请求方式
+					type : "PUT",
+					//请求的媒体类型
+					contentType: "application/json;charset=UTF-8",
+					//请求地址
+					url : "/comment",
+					//数据，json字符串
+					data : JSON.stringify(json),
+					//请求成功
+					success : function(result) {
+						console.log(result);
+						// 获取集合属性
+						var code = result.code;
+
+						if (code == 0) {
+							// 刷新页面
+							search();
+						}else{
+							javaex.message({
+								content : result.msg,
+								type : "error"
+							});
+						}
+					},
+					//请求失败，包含具体的错误信息
+					error : function(e){
+						console.log(e.status);
+						console.log(e.responseText);
+					}
+				});
+			}
+		});
+	}
+
 	/**
 	 * 删除
 	 */
@@ -186,7 +271,7 @@
 			//请求的媒体类型
 			contentType: "application/json;charset=UTF-8",
 			//请求地址
-			url : "/tip/"+id,
+			url : "/comment/"+id,
 			//数据，json字符串
 			//data : JSON.stringify(json),
 			//请求成功
