@@ -1,6 +1,6 @@
 # 通用配置，缩进使用2个空格
 server:
-  port: 80
+  port: 8081
 
 spring:
   profiles:
