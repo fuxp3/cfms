@@ -1,6 +1,8 @@
 package com.design.bs.action.controller;
 
 import com.design.bs.action.entity.Action;
+import com.design.bs.action.entity.ActionCollect;
+import com.design.bs.action.mapper.ActionCollectMapper;
 import com.design.bs.action.mapper.ActionMapper;
 import com.design.bs.action.service.IActionService;
 import com.design.bs.core.dto.QueryPageRequest;
@@ -18,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -29,6 +32,9 @@ public class ActionController {
 
     @Autowired
     private ActionMapper actionMapper;
+
+    @Autowired
+    private ActionCollectMapper actionCollectMapper;
 
     @GetMapping("/action")
     public QueryPageResult list(@RequestParam("pageNum") int pageNum,@RequestParam("pageSize") int pageSize,@RequestParam("keyword") String keyword){
@@ -43,9 +49,20 @@ public class ActionController {
         return queryPageResult;
     }
 
+    @GetMapping("/frontend/action")
+    public List<Action> frontendList(){
+        return actionMapper.selectAll();
+    }
+
     @PostMapping("/action")
     public Boolean add(@RequestBody Action action) {
         actionService.save(action);
+        return true;
+    }
+
+    @PostMapping("/frontend/action/collect")
+    public Boolean addCollect(@RequestBody ActionCollect actionCollect) {
+        actionCollectMapper.insert(actionCollect);
         return true;
     }
 
@@ -93,6 +110,39 @@ public class ActionController {
 
     @GetMapping("/action/download/{id}")
     public void readImage(@PathVariable("id") Long id, HttpServletResponse response){
+        String destFileName = "";
+        InputStream fis = null;
+        try {
+            Action action = actionMapper.selectByPrimaryKey(id);
+            //上传文件存储的位置
+            destFileName = "C:\\upload\\" + action.getUid();
+
+            File destFile = new File(destFileName);
+
+            fis = new FileInputStream(destFile);
+
+            response.reset();
+            response.setContentType("application/octet-stream");
+            response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode(action.getName()+"", "UTF-8"));
+            ServletOutputStream outputStream = response.getOutputStream();
+
+            IOUtils.copy(fis,outputStream);
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    @GetMapping("/frontend/action/download/{id}")
+    public void frontendReadImage(@PathVariable("id") Long id, HttpServletResponse response){
         String destFileName = "";
         InputStream fis = null;
         try {

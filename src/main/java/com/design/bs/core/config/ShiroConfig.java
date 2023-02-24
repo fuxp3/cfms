@@ -46,7 +46,7 @@ public class ShiroConfig {
 		// "logout");
 
 		// 设置免认证 url
-		String anon = "/login,/drawImage,/javaex/**,/css/**,/img/**,/js/**";
+		String anon = "/login,/drawImage,/javaex/**,/css/**,/img/**,/js/**,/frontend/**,/comment/**";
 		String[] anonUrls = StringUtils.splitByWholeSeparatorPreserveAllTokens(anon, ",");
 		for (String url : anonUrls) {
 			filterChainDefinitionMap.put(url, "anon");

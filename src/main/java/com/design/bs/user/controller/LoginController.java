@@ -2,6 +2,7 @@ package com.design.bs.user.controller;
 
 import com.design.bs.core.dto.Response;
 import com.design.bs.core.enums.StatusCode;
+import com.design.bs.core.utils.UserUtils;
 import com.design.bs.menu.service.IMenuService;
 import com.design.bs.role.service.IRoleService;
 import com.design.bs.user.entity.User;
@@ -93,6 +94,7 @@ public class LoginController {
                 }
             }
             map.put("success", true);
+            map.put("token", UserUtils.getToken());
         } catch (UnknownAccountException uae) {
             map.put("success", false);
             map.put("errorInfo", "用户帐号或密码不正确");

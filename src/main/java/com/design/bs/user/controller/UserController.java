@@ -16,6 +16,7 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -46,6 +47,13 @@ public class UserController {
     @GetMapping("/user/info")
     public User info() {
     	return UserUtils.getCurrentUser();
+    }
+
+    @GetMapping("/frontend/user/info")
+    public User frontendInfo(@RequestParam("usercode") String usercode) {
+        Example example = new Example(User.class);
+        example.createCriteria().andEqualTo("usercode",usercode);
+        return userMapper.selectOneByExample(example);
     }
 
     @GetMapping("/user")
@@ -84,6 +92,16 @@ public class UserController {
         user.setUpdateTime(new Date());
         user.setSalt(null);
         user.setUpdateUser(UserUtils.getCurrentUser().getId());
+        userService.updateNotNull(user);
+        return true;
+    }
+
+    @PutMapping("/frontend/user")
+    public Boolean frontendUpdate(@RequestBody User user) {
+        //更新用户信息
+        user.setPassword(null); //这里设置为null，结合 updateNotNull 方法，表示不更新密码
+        user.setUpdateTime(new Date());
+        user.setSalt(null);
         userService.updateNotNull(user);
         return true;
     }

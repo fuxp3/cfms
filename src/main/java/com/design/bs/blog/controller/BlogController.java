@@ -8,8 +8,10 @@ import com.design.bs.core.dto.QueryPageResult;
 import com.design.bs.core.utils.PageUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import tk.mybatis.mapper.entity.Example;
 
 import java.util.Date;
+import java.util.List;
 
 @RestController
 public class BlogController {
@@ -31,6 +33,13 @@ public class BlogController {
         queryPageResult.setPageNum(pageNum);
         queryPageResult.setPageSize(pageSize);
         return queryPageResult;
+    }
+
+    @GetMapping("/frontend/blog")
+    public List<Blog> frontendList(){
+        Example example = new Example(Blog.class);
+        example.createCriteria().andEqualTo("state","已通过");
+        return blogMapper.selectByExample(example);
     }
 
     @PostMapping("/blog")
