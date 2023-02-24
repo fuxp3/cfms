@@ -13,12 +13,14 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +66,28 @@ public class ActionController {
     public Boolean addCollect(@RequestBody ActionCollect actionCollect) {
         actionCollectMapper.insert(actionCollect);
         return true;
+    }
+
+    @DeleteMapping("/frontend/action/collect")
+    public Boolean deleteCollect(@RequestBody ActionCollect actionCollect) {
+        Example example = new Example(ActionCollect.class);
+        example.createCriteria().andEqualTo("usercode",actionCollect.getUsercode())
+        .andEqualTo("actionId",actionCollect.getActionId());
+        actionCollectMapper.deleteByExample(example);
+        return true;
+    }
+
+    @GetMapping("/frontend/action/collect/list")
+    public List<Action> collectList(@RequestParam("usercode") String usercode){
+        Example example = new Example(ActionCollect.class);
+        example.createCriteria().andEqualTo("usercode",usercode);
+        List<ActionCollect> actionCollects = actionCollectMapper.selectByExample(example);
+
+        List<Action> list = new ArrayList<>();
+        actionCollects.forEach(c->{
+            list.add(actionMapper.selectByPrimaryKey(c.getActionId()));
+        });
+        return list;
     }
 
     @PutMapping("/action")
