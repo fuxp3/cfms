@@ -9,6 +9,8 @@ import com.design.bs.tip.service.ITipService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 public class TipController {
     @Autowired
@@ -28,6 +30,12 @@ public class TipController {
         queryPageResult.setPageNum(pageNum);
         queryPageResult.setPageSize(pageSize);
         return queryPageResult;
+    }
+
+    @GetMapping("/frontend/tip")
+    public Tip list(){
+        List<Tip> tips = tipService.queryList(new Tip());
+        return tips.get((int)(Math.random()*(tips.size()-1)));
     }
 
     @PostMapping("/tip")
